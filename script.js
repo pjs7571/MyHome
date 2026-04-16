@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const body = encodeURIComponent(`이름: ${name}\n전화번호: ${phone}\n\n문의 내용:\n${message}`);
             
             // mailto 링크 생성 및 실행
-            window.location.href = `mailto:elite.park@email.com?subject=${subject}&body=${body}`;
+            window.location.href = `mailto:pjs42427571@gmail.com?subject=${subject}&body=${body}`;
             
             alert('기본 이메일 앱이 열립니다. 이메일을 전송해 주세요!');
         });
@@ -168,6 +168,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
                 <div style="margin-bottom: 1.5rem; white-space: pre-wrap; color: var(--text-white); font-size: 1.05rem;">${post.content}</div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <button onclick="likePost(${index})" style="background: rgba(0, 229, 255, 0.1); border: 1px solid var(--accent-color); color: var(--accent-color); padding: 0.4rem 1rem; border-radius: 4px; cursor: pointer; transition: 0.3s; font-weight: 600;">
+                        👍 추천 <span style="margin-left: 5px;">${post.likes || 0}</span>
+                    </button>
+                </div>
+
                 <div style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 1rem; margin-top: 1rem;">
                     <div style="margin-bottom: 1rem;">${repliesHtml}</div>
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
@@ -195,7 +202,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const newPost = {
                 name, email, content, 
                 date: new Date().toISOString(),
-                replies: []
+                replies: [],
+                likes: 0
             };
 
             const posts = JSON.parse(localStorage.getItem('boardPosts') || '[]');
@@ -224,6 +232,15 @@ document.addEventListener('DOMContentLoaded', () => {
         posts[index].replies.push(replyContent);
         localStorage.setItem('boardPosts', JSON.stringify(posts));
 
+        loadPosts();
+    };
+
+    // Like Post
+    window.likePost = function(index) {
+        const posts = JSON.parse(localStorage.getItem('boardPosts') || '[]');
+        if (posts[index].likes === undefined) posts[index].likes = 0;
+        posts[index].likes += 1;
+        localStorage.setItem('boardPosts', JSON.stringify(posts));
         loadPosts();
     };
 
