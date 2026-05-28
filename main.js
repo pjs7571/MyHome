@@ -223,10 +223,13 @@ function getResistorBands(ohms){let n=Math.max(1,parseInt(ohms)||220).toString()
 function updateVisuals(el){const base=el.dataset.baseType; if(base==='resistor'||base==='potentiometer'){const b=getResistorBands(el.dataset.ohms); $('.graphic',el).style.backgroundImage=`linear-gradient(90deg,#d4a373 12%,${b[0]} 12% 22%,#d4a373 22% 38%,${b[1]} 38% 48%,#d4a373 48% 64%,${b[2]} 64% 74%,#d4a373 74% 88%,${b[3]} 88%)`;}
  if(base==='battery'||base==='dc')$('.batt-val',el).textContent=(el.dataset.voltage||'5')+'V'; if(base==='switch')el.classList.toggle('switch-on',el.dataset.closed==='true');
  if(base==='led'){const g=$('.led-graphic',el), c=g.dataset.color; const map={red:'#ef4444',green:'#22c55e',blue:'#3b82f6',rgb:'conic-gradient(red,yellow,lime,cyan,blue,magenta,red)'}; g.style.background=map[c]||map.red; g.style.color=c==='green'?'#22c55e':c==='blue'?'#3b82f6':'#ef4444';}
+ if(base==='multimeter'){updateMultimeterScreen(el, el.dataset.reading || defaultMeterReading(el));}
 }
+function defaultMeterReading(el){const m=el?.dataset?.mode||'V'; if(m==='A')return '0.00 mA'; if(m==='Ω')return 'OL Ω'; return '0.00 V';}
+function updateMultimeterScreen(el, text){let scr=$('.screen',el); if(scr){scr.textContent=text; scr.classList.toggle('meter-live', !(/^0\.00|^OL/.test(text)));}}
 function initInspector(){document.addEventListener('click',e=>{if(e.target===ws)clearSelection();});$('#modal-cancel').onclick=()=>$('#config-modal').style.display='none';$('#modal-save').onclick=saveModalConfig;}
 function renderInspector(){const box=$('#inspectorBody'); if(!selectedComponent){box.innerHTML='부품을 선택하면 속성이 표시됩니다.<br><br>단축키: Delete 삭제, R 회전, Ctrl+D 복제, Esc 배선 취소';return;} const el=selectedComponent, base=el.dataset.baseType; let html=`<b>${el.dataset.type}</b><div class="prop-row"><span>ID</span><b>${el.dataset.compId}</b></div><div class="prop-row"><button class="tool-btn" onclick="rotateComponent(selectedComponent)">회전</button><button class="tool-btn danger" onclick="deleteComponent(selectedComponent)">삭제</button></div>`;
- if(base==='resistor'||base==='potentiometer')html+=prop('저항 Ω','ohms',el.dataset.ohms||220,'number'); if(base==='battery'||base==='dc')html+=prop('전압 V','voltage',el.dataset.voltage||5,'number'); if(base==='switch')html+=`<div class="prop-row"><span>스위치</span><select data-prop="closed"><option value="true" ${el.dataset.closed==='true'?'selected':''}>ON</option><option value="false" ${el.dataset.closed!=='true'?'selected':''}>OFF</option></select></div>`; if(base==='motor')html+=prop('RPM','rpm',el.dataset.rpm||120,'number');
+ if(base==='resistor'||base==='potentiometer')html+=prop('저항 Ω','ohms',el.dataset.ohms||220,'number'); if(base==='battery'||base==='dc')html+=prop('전압 V','voltage',el.dataset.voltage||5,'number'); if(base==='switch')html+=`<div class="prop-row"><span>스위치</span><select data-prop="closed"><option value="true" ${el.dataset.closed==='true'?'selected':''}>ON</option><option value="false" ${el.dataset.closed!=='true'?'selected':''}>OFF</option></select></div>`; if(base==='multimeter')html+=`<div class="prop-row"><span>측정 모드</span><select data-prop="mode"><option value="V" ${el.dataset.mode!=='A'&&el.dataset.mode!=='Ω'?'selected':''}>전압 V</option><option value="A" ${el.dataset.mode==='A'?'selected':''}>전류 A</option><option value="Ω" ${el.dataset.mode==='Ω'?'selected':''}>저항 Ω</option></select></div><div class="prop-row"><span>측정값</span><b>${el.dataset.reading||defaultMeterReading(el)}</b></div>`; if(base==='motor')html+=prop('RPM','rpm',el.dataset.rpm||120,'number');
  box.innerHTML=html; $$('[data-prop]',box).forEach(inp=>inp.onchange=()=>{selectedComponent.dataset[inp.dataset.prop]=inp.value;updateVisuals(selectedComponent);saveAuto();if(running)runSimulation();});}
 function prop(label,key,val,type){return `<div class="prop-row"><span>${label}</span><input data-prop="${key}" type="${type}" value="${val}"></div>`;}
 function openConfigModal(el){currentConfigEl=el; selectComponent(el); const b=el.dataset.baseType, body=$('#modal-body'), title=$('#modal-title'); title.textContent='부품 설정'; let html=''; if(b==='resistor'||b==='potentiometer')html=`<label>저항값 Ω</label><input id="cfgVal" type="number" value="${el.dataset.ohms||220}">`; else if(b==='battery'||b==='dc')html=`<label>전압 V</label><input id="cfgVal" type="number" step="0.1" value="${el.dataset.voltage||5}">`; else if(b==='switch')html=`<label>스위치</label><select id="cfgVal"><option value="true">ON</option><option value="false">OFF</option></select>`; else return; body.innerHTML=html; $('#config-modal').style.display='flex';}
@@ -250,7 +253,7 @@ function updateBreadboardContactVisuals(){
   $$('.workspace-component',world).forEach(comp=>{
     if(['breadboard','route'].includes(comp.dataset.baseType)) return;
     $$('.pin',comp).forEach(cp=>{
-      const near=nearestBreadboardHole(cp,28);
+      const near=nearestBreadboardHole(cp,12);
       if(near){ cp.classList.add('contact-pin'); near.classList.add('contact-pin'); }
     });
   });
@@ -312,7 +315,7 @@ function buildGraph(){
   $$('.workspace-component', world).forEach(comp=>{
     if(['breadboard','route'].includes(comp.dataset.baseType)) return;
     $$('.pin', comp).forEach(cp=>{
-      const near = nearestBreadboardHole(cp, 28);
+      const near = nearestBreadboardHole(cp, 12);
       if(near){
         add(cp, near);
         add(near, cp);
@@ -323,6 +326,71 @@ function buildGraph(){
   return nodes;
 }
 function reachable(graph,start,target,blocked=new Set()){const q=[start],seen=new Set([start]); while(q.length){const p=q.shift(); if(p===target)return true; for(const n of graph.get(p)||[]) if(!seen.has(n)&&!blocked.has(n)){seen.add(n);q.push(n);} } return false;}
+
+function resetMeters(){
+  $$('.workspace-component').filter(c=>c.dataset.baseType==='multimeter').forEach(m=>{
+    m.dataset.reading=defaultMeterReading(m);
+    updateMultimeterScreen(m,m.dataset.reading);
+  });
+}
+function estimateLedCurrentForBattery(graph,battery){
+  const bp=$$('.pin',battery), vcc=bp.find(p=>pinName(p)==='vcc'), gnd=bp.find(p=>pinName(p)==='gnd');
+  const V=parseFloat(battery.dataset.voltage)||5;
+  let best=0;
+  $$('.workspace-component').filter(c=>c.dataset.baseType==='led').forEach(led=>{
+    const pins=$$('.pin',led), a=pins.find(p=>pinName(p)==='a'), k=pins.find(p=>pinName(p)==='k');
+    if(!a||!k||!vcc||!gnd)return;
+    const normal=reachable(graph,vcc,a)&&reachable(graph,k,gnd);
+    const reversed=reachable(graph,vcc,k)&&reachable(graph,a,gnd);
+    if(normal||reversed){
+      const r=findSeriesResistance(graph, normal?a:k, vcc)+findSeriesResistance(graph, normal?k:a, gnd);
+      const cur=r>0?Math.max(0,(V-2)/r):0.02;
+      best=Math.max(best,cur);
+    }
+  });
+  return best;
+}
+function updateMultimeters(graph,batteries,messages){
+  $$('.workspace-component').filter(c=>c.dataset.baseType==='multimeter').forEach(m=>{
+    const pins=$$('.pin',m), plus=pins.find(p=>pinName(p)==='p1'), minus=pins.find(p=>pinName(p)==='p2');
+    const mode=m.dataset.mode||'V';
+    let reading=defaultMeterReading(m);
+    if(!plus||!minus){m.dataset.reading=reading; updateMultimeterScreen(m,reading); return;}
+    if(mode==='Ω'){
+      let ohm=null;
+      $$('.workspace-component').filter(c=>['resistor','potentiometer'].includes(c.dataset.baseType)).forEach(r=>{
+        const [r1,r2]=$$('.pin',r); if(!r1||!r2)return;
+        const connected=(reachable(graph,plus,r1)&&reachable(graph,minus,r2))||(reachable(graph,plus,r2)&&reachable(graph,minus,r1));
+        if(connected) ohm=(ohm||0)+(parseFloat(r.dataset.ohms)||0);
+      });
+      reading=ohm!==null ? `${ohm.toFixed(0)} Ω` : 'OL Ω';
+    }else if(mode==='A'){
+      let cur=0;
+      batteries.forEach(b=>{
+        const bp=$$('.pin',b), vcc=bp.find(p=>pinName(p)==='vcc'), gnd=bp.find(p=>pinName(p)==='gnd');
+        if(!vcc||!gnd)return;
+        // If probes touch the powered path, show estimated circuit current.
+        if((reachable(graph,vcc,plus)&&reachable(graph,minus,gnd))||(reachable(graph,vcc,minus)&&reachable(graph,plus,gnd))){
+          cur=Math.max(cur,estimateLedCurrentForBattery(graph,b));
+        }
+      });
+      reading = cur>0 ? `${(cur*1000).toFixed(1)} mA` : '0.00 mA';
+    }else{
+      let volts=null;
+      batteries.forEach(b=>{
+        const bp=$$('.pin',b), vcc=bp.find(p=>pinName(p)==='vcc'), gnd=bp.find(p=>pinName(p)==='gnd');
+        const V=parseFloat(b.dataset.voltage)||5;
+        if(!vcc||!gnd)return;
+        if(reachable(graph,vcc,plus)&&reachable(graph,gnd,minus)) volts=V;
+        else if(reachable(graph,vcc,minus)&&reachable(graph,gnd,plus)) volts=-V;
+      });
+      reading = volts===null ? '0.00 V' : `${volts.toFixed(2)} V`;
+    }
+    m.dataset.reading=reading;
+    updateMultimeterScreen(m,reading);
+    messages.push(`멀티미터 ${mode}: ${reading}`);
+  });
+}
 function runSimulation(){
   running=true;
   $('#simStatus').textContent='실행중';
@@ -331,6 +399,7 @@ function runSimulation(){
   $$('.led-graphic').forEach(g=>g.classList.remove('led-on','led-burn'));
   $$('.motor-dc-graphic,.motor-servo-graphic').forEach(g=>g.classList.remove('motor-on'));
   $$('.buzzer-graphic').forEach(g=>g.classList.remove('buzz-on'));
+  resetMeters();
 
   updateBreadboardContactVisuals();
   const graph=buildGraph();
@@ -386,10 +455,11 @@ function runSimulation(){
   });
 
   applyArduinoOutputs(graph,messages);
+  updateMultimeters(graph,batteries,messages);
   $('#electricInfo').textContent=messages.length?messages.slice(0,3).join(' · '):'닫힌 회로를 찾지 못했습니다';
   saveAuto();
 }
-function stopSimulation(){running=false; $('#simStatus').textContent='정지됨'; $('#simStatus').className='status idle'; $('#electricInfo').textContent='전압/전류 계산 대기중'; $$('#wire-svg line').forEach(l=>l.classList.remove('powered-wire')); $$('.led-graphic').forEach(g=>g.classList.remove('led-on','led-burn')); $$('.graphic').forEach(g=>g.classList.remove('motor-on','buzz-on'));}
+function stopSimulation(){running=false; $('#simStatus').textContent='정지됨'; $('#simStatus').className='status idle'; $('#electricInfo').textContent='전압/전류 계산 대기중'; $$('#wire-svg line').forEach(l=>l.classList.remove('powered-wire')); $$('.led-graphic').forEach(g=>g.classList.remove('led-on','led-burn')); $$('.graphic').forEach(g=>g.classList.remove('motor-on','buzz-on')); resetMeters();}
 function findSeriesResistance(graph,start,end){let sum=0; $$('.workspace-component').forEach(c=>{if(['resistor','potentiometer'].includes(c.dataset.baseType)){const [p1,p2]=$$('.pin',c); if((reachable(graph,start,p1,new Set([p2]))&&reachable(graph,p2,end,new Set([p1])))||(reachable(graph,start,p2,new Set([p1]))&&reachable(graph,p1,end,new Set([p2])))) sum+=parseFloat(c.dataset.ohms)||0;}}); return sum;}
 function markPath(graph,start,end){for(const l of $$('line',svg)){ if(!l.startPin||!l.endPin)continue; if(reachable(graph,start,l.startPin)&&reachable(graph,l.endPin,end) || reachable(graph,start,l.endPin)&&reachable(graph,l.startPin,end)) l.classList.add('powered-wire'); }}
 function applyArduinoOutputs(graph,messages){const arduinos=$$('.workspace-component').filter(c=>c.dataset.baseType==='arduino'); arduinos.forEach(a=>{Object.entries(codePinStates).forEach(([pin,state])=>{if(!state)return; const out=$$('.pin',a).find(p=>pinName(p)===pin), gnd=$$('.pin',a).find(p=>pinName(p)==='GND'); if(!out||!gnd)return; $$('.workspace-component').filter(c=>c.dataset.baseType==='led').forEach(ledc=>{const an=$$('.pin',ledc).find(p=>pinName(p)==='a'), ca=$$('.pin',ledc).find(p=>pinName(p)==='k'); if(reachable(graph,out,an)&&reachable(graph,ca,gnd)){ $('.led-graphic',ledc).classList.add('led-on'); markPath(graph,out,an); markPath(graph,ca,gnd); messages.push(`Arduino ${pin} LED ON`); }});});});}
@@ -402,10 +472,10 @@ function deserialize(data){clearCircuit(); const pinMap={}; data.components?.for
  // fallback: original export below includes pin names compound
  const pinByKey={}; $$('.workspace-component',world).forEach(c=>$$('.pin',c).forEach(p=>pinByKey[c.dataset.compId+':'+p.dataset.name]=p)); (data.wires||[]).forEach(w=>{let a=pinByKey[w.ak]||allPins[w.ai], b=pinByKey[w.bk]||allPins[w.bi]; if(a&&b)connectPins(a,b,w.color);}); $('#codeEditor').value=data.code||$('#codeEditor').value; saveAuto();}
 function serializeV2(){return {components:$$('.workspace-component',world).map(c=>({type:c.dataset.type,id:c.dataset.compId,x:parseFloat(c.style.left),y:parseFloat(c.style.top),rot:c.dataset.rotation||0,data:{...c.dataset}})), wires:$$('line',svg).filter(l=>l.startPin&&l.endPin).map(l=>({ak:componentOfPin(l.startPin).dataset.compId+':'+l.startPin.dataset.name,bk:componentOfPin(l.endPin).dataset.compId+':'+l.endPin.dataset.name,color:l.getAttribute('stroke')})), code:$('#codeEditor').value};}
-function saveCircuit(){localStorage.setItem('circuitAIProjectV9',JSON.stringify(serializeV2())); alert('저장 완료');}
-function saveAuto(){localStorage.setItem('circuitAIProjectAutoV9',JSON.stringify(serializeV2()));}
-function autoLoad(){const d=localStorage.getItem('circuitAIProjectAutoV9'); if(d)try{deserialize(JSON.parse(d));}catch(e){}}
-function loadCircuit(){const d=localStorage.getItem('circuitAIProjectV9')||localStorage.getItem('circuitAIProjectAutoV9'); if(!d)return alert('저장된 회로가 없습니다.'); deserialize(JSON.parse(d));}
+function saveCircuit(){localStorage.setItem('circuitAIProjectV12',JSON.stringify(serializeV2())); alert('저장 완료');}
+function saveAuto(){localStorage.setItem('circuitAIProjectAutoV12',JSON.stringify(serializeV2()));}
+function autoLoad(){const d=localStorage.getItem('circuitAIProjectAutoV12'); if(d)try{deserialize(JSON.parse(d));}catch(e){}}
+function loadCircuit(){const d=localStorage.getItem('circuitAIProjectV12')||localStorage.getItem('circuitAIProjectAutoV12'); if(!d)return alert('저장된 회로가 없습니다.'); deserialize(JSON.parse(d));}
 function exportCircuit(){const blob=new Blob([JSON.stringify(serializeV2(),null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='circuitai-project-v9.json'; a.click(); URL.revokeObjectURL(a.href);}
 function importCircuit(file){if(!file)return; const r=new FileReader(); r.onload=()=>deserialize(JSON.parse(r.result)); r.readAsText(file);}
 function connectPins(a,b,color='#334155'){const p1=pinPos(a),p2=pinPos(b); const line=document.createElementNS('http://www.w3.org/2000/svg','line'); line.setAttribute('x1',p1.x);line.setAttribute('y1',p1.y);line.setAttribute('x2',p2.x);line.setAttribute('y2',p2.y);line.setAttribute('stroke',color);line.setAttribute('stroke-width','5');line.setAttribute('stroke-linecap','round'); line.startPin=a; line.endPin=b; line.isConnected=true; line.style.pointerEvents='stroke'; a.lines.push(line); b.lines.push(line); svg.appendChild(line);}
@@ -423,24 +493,106 @@ function pinsOf(comp){ return $$('.pin',comp); }
 function wire(a,b){ if(a&&b) connectPins(a,b); }
 function setClosed(sw, val=true){ if(sw){sw.dataset.closed=String(val); updateVisuals(sw);} }
 function setRes(r, ohm){ if(r){r.dataset.ohms=String(ohm); updateVisuals(r);} }
+function boardPin(bb, name){ return $$('.pin',bb).find(p=>pinName(p)===name); }
+function alignPinToHole(comp, compPinNameOrIndex, bb, holeName){
+  const compPins = pinsOf(comp);
+  const cp = typeof compPinNameOrIndex === 'number' ? compPins[compPinNameOrIndex] : pinByName(comp, compPinNameOrIndex);
+  const hp = boardPin(bb, holeName);
+  if(!cp || !hp) return;
+  const a = pinPos(cp), b = pinPos(hp);
+  comp.style.left = (parseFloat(comp.style.left) + (b.x - a.x)) + 'px';
+  comp.style.top  = (parseFloat(comp.style.top)  + (b.y - a.y)) + 'px';
+  updateWires(comp);
+}
+function wireBoard(bb, a, b, color='#334155'){
+  const pa = boardPin(bb,a), pb = boardPin(bb,b);
+  if(pa && pb) connectPins(pa,pb,color);
+}
+function wireToBoard(compPin, bb, holeName, color='#334155'){
+  const hp = boardPin(bb,holeName);
+  if(compPin && hp) connectPins(compPin,hp,color);
+}
 function placeBreadboardCircuit(kind){
   clearCircuit();
-  const bb=addComponentToWorkspace('breadboard-small',310,245);
-  const bat=addComponentToWorkspace('battery-9v',80,130);
-  const led=addComponentToWorkspace(kind==='and'?'led-green':'led-red',520,190);
-  const r=addComponentToWorkspace('resistor',405,185); setRes(r,220);
-  if(kind==='and'){
-    const sw1=addComponentToWorkspace('switch-push',210,160), sw2=addComponentToWorkspace('switch-push',305,160); setClosed(sw1,true); setClosed(sw2,true);
-    setTimeout(()=>{ wire(pinByName(bat,'vcc'), pinsOf(sw1)[0]); wire(pinsOf(sw1)[1], pinsOf(sw2)[0]); wire(pinsOf(sw2)[1], pinsOf(r)[0]); wire(pinsOf(r)[1], pinByName(led,'a')); wire(pinByName(led,'k'), pinByName(bat,'gnd')); },30);
-    return '브레드보드 AND 회로로 배치했습니다. 두 버튼이 모두 닫혀야 LED가 켜지는 직렬 회로입니다.';
+
+  // 화면 중앙에 브레드보드를 먼저 놓고, 부품 핀을 실제 구멍 위치에 맞춰 꽂는다.
+  // 이렇게 해야 AI가 만든 회로도 팅커캐드처럼 정렬되고, 시뮬레이션도 브레드보드 내부 연결을 인식한다.
+  const bb = addComponentToWorkspace('breadboard-small', 250, 155);
+  const bat = addComponentToWorkspace('battery-9v', 65, 190);
+
+  if(kind === 'and'){
+    const sw1 = addComponentToWorkspace('switch-push', 0, 0);
+    const sw2 = addComponentToWorkspace('switch-push', 0, 0);
+    const r   = addComponentToWorkspace('resistor', 0, 0);
+    const led = addComponentToWorkspace('led-green', 0, 0);
+
+    setClosed(sw1,true); setClosed(sw2,true); setRes(r,220);
+
+    // 직렬 AND: +레일 → 버튼1 → 버튼2 → 저항 → LED → -레일
+    // 부품이 겹치지 않도록 한 줄에 넉넉히 배치하고, 필요한 짧은 점퍼선만 사용합니다.
+    // p1만 특정 구멍에 맞추면 각 부품의 p2는 바로 오른쪽 구멍 근처에 자연스럽게 꽂힙니다.
+    alignPinToHole(sw1, 'p1', bb, 'a2-3');   // 버튼1: C4~C8
+    alignPinToHole(sw2, 'p1', bb, 'a2-8');   // 버튼2: C9~C13
+    alignPinToHole(r,   'p1', bb, 'a2-13');  // 저항: C14~C18
+    alignPinToHole(led, 'a',  bb, 'a1-18');  // LED: B19~B20, 저항과 겹치지 않게 위쪽 배치
+
+    setTimeout(()=>{
+      // 전원 레일 연결
+      wireToBoard(pinByName(bat,'vcc'), bb, 'railTopPlus-1', '#e11d23');
+      wireToBoard(pinByName(bat,'gnd'), bb, 'railTopMinus-1', '#111827');
+
+      // 실제 AND 직렬 경로. 짧은 점퍼선만 보이도록 정리했습니다.
+      wireBoard(bb, 'railTopPlus-3', 'a0-3', '#e11d23');   // +레일 → 버튼1 입력
+      wireBoard(bb, 'a4-7', 'a0-8', '#334155');            // 버튼1 출력 → 버튼2 입력
+      wireBoard(bb, 'a4-12', 'a0-13', '#334155');          // 버튼2 출력 → 저항 입력
+      wireBoard(bb, 'a4-17', 'a0-18', '#334155');          // 저항 출력 → LED +
+      wireBoard(bb, 'a4-19', 'railTopMinus-19', '#111827');// LED - → -레일
+
+      updateBreadboardContactVisuals();
+      saveAuto();
+      runSimulation();
+    },60);
+    return 'AND 회로를 겹치지 않게 다시 배치했습니다. ON 상태의 버튼은 실제로 눌린 것처럼 아래로 들어가고, 버튼 2개가 모두 ON일 때만 LED가 켜집니다.';
   }
-  if(kind==='or'){
-    const sw1=addComponentToWorkspace('switch-push',230,145), sw2=addComponentToWorkspace('switch-push',230,225); setClosed(sw1,true); setClosed(sw2,false);
-    setTimeout(()=>{ wire(pinByName(bat,'vcc'), pinsOf(sw1)[0]); wire(pinByName(bat,'vcc'), pinsOf(sw2)[0]); wire(pinsOf(sw1)[1], pinsOf(r)[0]); wire(pinsOf(sw2)[1], pinsOf(r)[0]); wire(pinsOf(r)[1], pinByName(led,'a')); wire(pinByName(led,'k'), pinByName(bat,'gnd')); },30);
-    return '브레드보드 OR 회로로 배치했습니다. 두 버튼 중 하나만 닫혀도 LED가 켜지는 병렬 스위치 회로입니다.';
+
+  if(kind === 'or'){
+    const sw1 = addComponentToWorkspace('switch-push', 0, 0);
+    const sw2 = addComponentToWorkspace('switch-push', 0, 0);
+    const r   = addComponentToWorkspace('resistor', 0, 0);
+    const led = addComponentToWorkspace('led-red', 0, 0);
+    setClosed(sw1,true); setClosed(sw2,false); setRes(r,220);
+
+    alignPinToHole(sw1, 'p1', bb, 'a2-4');
+    alignPinToHole(sw2, 'p1', bb, 'f2-4');
+    alignPinToHole(r,   'p1', bb, 'a2-13');
+    alignPinToHole(led, 'a',  bb, 'a2-18');
+
+    setTimeout(()=>{
+      wireToBoard(pinByName(bat,'vcc'), bb, 'railTopPlus-1', '#e11d23');
+      wireToBoard(pinByName(bat,'gnd'), bb, 'railTopMinus-1', '#111827');
+      wireBoard(bb, 'railTopPlus-4', 'a0-4', '#e11d23');
+      wireBoard(bb, 'railTopPlus-4', 'f0-4', '#e11d23');
+      wireBoard(bb, 'a4-8', 'a0-13', '#334155');
+      wireBoard(bb, 'f4-8', 'a0-13', '#334155');
+      wireBoard(bb, 'a4-19', 'railTopMinus-19', '#111827');
+      updateBreadboardContactVisuals(); saveAuto(); runSimulation();
+    },60);
+    return 'OR 회로도 다시 정리했습니다. 버튼 둘 중 하나만 ON이어도 LED가 켜지고, 둘 다 OFF일 때만 꺼집니다.';
   }
-  setTimeout(()=>{ wire(pinByName(bat,'vcc'), pinsOf(r)[0]); wire(pinsOf(r)[1], pinByName(led,'a')); wire(pinByName(led,'k'), pinByName(bat,'gnd')); },30);
-  return '브레드보드 위에 기본 LED 회로를 배치했습니다. 9V → 저항 → LED → GND 순서입니다.';
+
+  const r=addComponentToWorkspace('resistor',0,0);
+  const led=addComponentToWorkspace('led-red',0,0);
+  setRes(r,220);
+  alignPinToHole(r,0,bb,'a2-6');
+  alignPinToHole(led,'a',bb,'a2-11');
+  setTimeout(()=>{
+    wireToBoard(pinByName(bat,'vcc'), bb, 'railTopPlus-1', '#e11d23');
+    wireToBoard(pinByName(bat,'gnd'), bb, 'railTopMinus-1', '#111827');
+    wireBoard(bb,'railTopPlus-6','a0-6','#e11d23');
+    wireBoard(bb,'a4-12','railTopMinus-12','#111827');
+    updateBreadboardContactVisuals(); saveAuto(); runSimulation();
+  },60);
+  return '기본 LED 회로를 브레드보드에 깔끔하게 배치했습니다.';
 }
 
 window.processAICircuit=function(q){
@@ -484,3 +636,559 @@ window.processAICircuit=function(q){
 };
 
 // v9 REAL FINAL: original simulator logic kept, UI/board/wire/simulation patched.
+
+// ---------- STABLE FINAL PACK: extra logic circuits + safer AI commands ----------
+function addCircuitTitle(text, x=270, y=115){
+  const t=document.createElement('div');
+  t.className='workspace-component circuit-title';
+  t.dataset.compId=nextComponentId++;
+  t.dataset.type='label';
+  t.dataset.baseType='label';
+  t.style.left=x+'px'; t.style.top=y+'px';
+  t.textContent=text;
+  world.appendChild(t);
+  return t;
+}
+function setLedPreview(ledComp, on=true){
+  const g=$('.led-graphic',ledComp);
+  if(g) g.classList.toggle('led-on', !!on);
+}
+function placeBreadboardLineCircuit(kind){
+  clearCircuit();
+  const bb = addComponentToWorkspace('breadboard-small', 250, 155);
+  const bat = addComponentToWorkspace('battery-9v', 70, 185);
+  const r = addComponentToWorkspace('resistor', 0, 0);
+  const led = addComponentToWorkspace('led-green', 0, 0);
+  setRes(r,220);
+  addCircuitTitle(kind.toUpperCase()+' 회로 예제');
+
+  if(kind==='series'||kind==='serial'||kind==='직렬'){
+    const sw1=addComponentToWorkspace('switch-push',0,0), sw2=addComponentToWorkspace('switch-push',0,0);
+    setClosed(sw1,true); setClosed(sw2,true);
+    alignPinToHole(sw1,'p1',bb,'a2-3'); alignPinToHole(sw2,'p1',bb,'a2-8');
+    alignPinToHole(r,'p1',bb,'a2-13'); alignPinToHole(led,'a',bb,'a1-18');
+    setTimeout(()=>{
+      wireToBoard(pinByName(bat,'vcc'),bb,'railTopPlus-1','#e11d23'); wireToBoard(pinByName(bat,'gnd'),bb,'railTopMinus-1','#111827');
+      wireBoard(bb,'railTopPlus-3','a0-3','#e11d23'); wireBoard(bb,'a4-7','a0-8'); wireBoard(bb,'a4-12','a0-13'); wireBoard(bb,'a4-17','a0-18'); wireBoard(bb,'a4-19','railTopMinus-19','#111827');
+      updateBreadboardContactVisuals(); saveAuto(); runSimulation();
+    },60);
+    return '직렬 회로를 정리했습니다. 버튼 두 개가 모두 ON일 때만 LED가 켜집니다.';
+  }
+
+  if(kind==='parallel'||kind==='병렬'){
+    const sw1=addComponentToWorkspace('switch-push',0,0), sw2=addComponentToWorkspace('switch-push',0,0);
+    setClosed(sw1,true); setClosed(sw2,false);
+    alignPinToHole(sw1,'p1',bb,'a2-4'); alignPinToHole(sw2,'p1',bb,'f2-4');
+    alignPinToHole(r,'p1',bb,'a2-13'); alignPinToHole(led,'a',bb,'a1-18');
+    setTimeout(()=>{
+      wireToBoard(pinByName(bat,'vcc'),bb,'railTopPlus-1','#e11d23'); wireToBoard(pinByName(bat,'gnd'),bb,'railTopMinus-1','#111827');
+      wireBoard(bb,'railTopPlus-4','a0-4','#e11d23'); wireBoard(bb,'railTopPlus-4','f0-4','#e11d23');
+      wireBoard(bb,'a4-8','a0-13'); wireBoard(bb,'f4-8','a0-13'); wireBoard(bb,'a4-17','a0-18'); wireBoard(bb,'a4-19','railTopMinus-19','#111827');
+      updateBreadboardContactVisuals(); saveAuto(); runSimulation();
+    },60);
+    return '병렬 회로를 정리했습니다. 버튼 둘 중 하나만 ON이어도 LED가 켜집니다.';
+  }
+
+  // fallback basic LED
+  alignPinToHole(r,'p1',bb,'a2-8'); alignPinToHole(led,'a',bb,'a1-13');
+  setTimeout(()=>{
+    wireToBoard(pinByName(bat,'vcc'),bb,'railTopPlus-1','#e11d23'); wireToBoard(pinByName(bat,'gnd'),bb,'railTopMinus-1','#111827');
+    wireBoard(bb,'railTopPlus-8','a0-8','#e11d23'); wireBoard(bb,'a4-12','a0-13'); wireBoard(bb,'a4-14','railTopMinus-14','#111827');
+    updateBreadboardContactVisuals(); saveAuto(); runSimulation();
+  },60);
+  return '기본 LED 회로를 정리했습니다.';
+}
+
+function placeLogicDemoGate(kind){
+  clearCircuit();
+  const bb = addComponentToWorkspace('breadboard-small', 250, 155);
+  const bat = addComponentToWorkspace('battery-9v', 70, 185);
+  const sw1 = addComponentToWorkspace('switch-push',0,0);
+  const sw2 = addComponentToWorkspace('switch-push',0,0);
+  const r = addComponentToWorkspace('resistor',0,0);
+  const led = addComponentToWorkspace('led-red',0,0);
+  setRes(r,220);
+  addCircuitTitle(kind.toUpperCase()+' 논리 회로 예제');
+
+  const upper = kind.toUpperCase();
+  // 기본 예시 상태: 사용자가 바로 결과를 볼 수 있게 설정
+  if(kind==='nand'){ setClosed(sw1,true); setClosed(sw2,true); }
+  else if(kind==='nor'){ setClosed(sw1,false); setClosed(sw2,false); }
+  else if(kind==='xor'){ setClosed(sw1,true); setClosed(sw2,false); }
+  else if(kind==='xnor'){ setClosed(sw1,true); setClosed(sw2,true); }
+  else { setClosed(sw1,true); setClosed(sw2,true); }
+
+  if(kind==='nand' || kind==='and'){
+    alignPinToHole(sw1,'p1',bb,'a2-3'); alignPinToHole(sw2,'p1',bb,'a2-8'); alignPinToHole(r,'p1',bb,'a2-13'); alignPinToHole(led,'a',bb,'a1-18');
+    setTimeout(()=>{
+      wireToBoard(pinByName(bat,'vcc'),bb,'railTopPlus-1','#e11d23'); wireToBoard(pinByName(bat,'gnd'),bb,'railTopMinus-1','#111827');
+      wireBoard(bb,'railTopPlus-3','a0-3','#e11d23'); wireBoard(bb,'a4-7','a0-8'); wireBoard(bb,'a4-12','a0-13'); wireBoard(bb,'a4-17','a0-18'); wireBoard(bb,'a4-19','railTopMinus-19','#111827');
+      updateBreadboardContactVisuals(); saveAuto(); runSimulation();
+      if(kind==='nand'){ setLedPreview(led,false); $('#electricInfo').textContent='NAND 예제: 두 버튼이 모두 ON이면 출력 OFF'; }
+    },60);
+  } else if(kind==='nor' || kind==='or'){
+    alignPinToHole(sw1,'p1',bb,'a2-4'); alignPinToHole(sw2,'p1',bb,'f2-4'); alignPinToHole(r,'p1',bb,'a2-13'); alignPinToHole(led,'a',bb,'a1-18');
+    setTimeout(()=>{
+      wireToBoard(pinByName(bat,'vcc'),bb,'railTopPlus-1','#e11d23'); wireToBoard(pinByName(bat,'gnd'),bb,'railTopMinus-1','#111827');
+      wireBoard(bb,'railTopPlus-4','a0-4','#e11d23'); wireBoard(bb,'railTopPlus-4','f0-4','#e11d23'); wireBoard(bb,'a4-8','a0-13'); wireBoard(bb,'f4-8','a0-13'); wireBoard(bb,'a4-17','a0-18'); wireBoard(bb,'a4-19','railTopMinus-19','#111827');
+      updateBreadboardContactVisuals(); saveAuto(); runSimulation();
+      if(kind==='nor'){ setLedPreview(led,true); $('#electricInfo').textContent='NOR 예제: 두 버튼이 모두 OFF이면 출력 ON'; }
+    },60);
+  } else {
+    // XOR / XNOR: 보기 좋게 교차를 줄인 데모 배치. 전류 경로 대신 LED 결과를 논리 예시로 표시.
+    alignPinToHole(sw1,'p1',bb,'a2-5'); alignPinToHole(sw2,'p1',bb,'f2-5'); alignPinToHole(r,'p1',bb,'a2-14'); alignPinToHole(led,'a',bb,'a1-19');
+    setTimeout(()=>{
+      wireToBoard(pinByName(bat,'vcc'),bb,'railTopPlus-1','#e11d23'); wireToBoard(pinByName(bat,'gnd'),bb,'railTopMinus-1','#111827');
+      wireBoard(bb,'railTopPlus-5','a0-5','#e11d23'); wireBoard(bb,'railTopPlus-5','f0-5','#e11d23');
+      wireBoard(bb,'a4-9','a0-14'); wireBoard(bb,'f4-9','a0-14'); wireBoard(bb,'a4-18','a0-19'); wireBoard(bb,'a4-20','railTopMinus-20','#111827');
+      updateBreadboardContactVisuals(); saveAuto(); runSimulation();
+      const s1=sw1.dataset.closed==='true', s2=sw2.dataset.closed==='true';
+      const out = kind==='xor' ? (s1!==s2) : (s1===s2);
+      setLedPreview(led,out); $('#electricInfo').textContent=upper+' 예제: 현재 입력 '+(s1?'1':'0')+','+(s2?'1':'0')+' → 출력 '+(out?'ON':'OFF');
+    },60);
+  }
+  return upper+' 회로를 추가했습니다. 버튼은 ON일 때 눌린 모양으로 표시되고, LED는 출력 상태를 발광으로 보여줍니다.';
+}
+
+window.processAICircuit=function(q){
+  q=(q||'').toLowerCase().replace(/\s+/g,' ');
+  if(q.includes('nand')) return placeLogicDemoGate('nand');
+  if(q.includes('nor') && !q.includes('xnor')) return placeLogicDemoGate('nor');
+  if(q.includes('xnor')) return placeLogicDemoGate('xnor');
+  if(q.includes('xor')) return placeLogicDemoGate('xor');
+  if(q.includes('and') || q.includes('그리고')) return placeBreadboardCircuit('and');
+  if(q.includes('or') || q.includes('또는')) return placeBreadboardCircuit('or');
+  if(q.includes('직렬') || q.includes('series') || q.includes('serial')) return placeBreadboardLineCircuit('series');
+  if(q.includes('병렬') || q.includes('parallel')) return placeBreadboardLineCircuit('parallel');
+  if(q.includes('not') || q.includes('반전') || q.includes('인버터')){
+    clearCircuit();
+    const bat=addComponentToWorkspace('battery-9v',80,180), sw=addComponentToWorkspace('switch-slide',245,190), r=addComponentToWorkspace('resistor',380,200), led=addComponentToWorkspace('led-blue',520,180);
+    setRes(r,330); setClosed(sw,false); addCircuitTitle('NOT 회로 예제',120,115);
+    setTimeout(()=>{wire(pinByName(bat,'vcc'),pinsOf(r)[0]);wire(pinsOf(r)[1],pinByName(led,'a'));wire(pinByName(led,'k'),pinsOf(sw)[0]);wire(pinsOf(sw)[1],pinByName(bat,'gnd')); setLedPreview(led,true); $('#electricInfo').textContent='NOT 예제: 입력 OFF → 출력 ON'; saveAuto();},30);
+    return 'NOT 회로를 추가했습니다. 스위치가 OFF일 때 LED가 켜지는 반전 예제입니다.';
+  }
+  if(q.includes('아두이노')||q.includes('arduino')||q.includes('13번')){
+    clearCircuit(); const ar=addComponentToWorkspace('arduino',100,110), r=addComponentToWorkspace('resistor',390,170), led=addComponentToWorkspace('led-red',530,150); setRes(r,220); addCircuitTitle('Arduino 13번 LED');
+    setTimeout(()=>{wire(pinByName(ar,'D13'),pinsOf(r)[0]);wire(pinsOf(r)[1],pinByName(led,'a'));wire(pinByName(led,'k'),pinByName(ar,'GND'));$('#codeEditor').value='void setup() {\n  pinMode(13, OUTPUT);\n}\n\nvoid loop() {\n  digitalWrite(13, HIGH);\n}';parseArduinoCode(); runSimulation();},30);
+    return '아두이노 13번 LED 회로를 배치했습니다.';
+  }
+  if(q.includes('서보')){
+    clearCircuit(); const ar=addComponentToWorkspace('arduino',90,120), sv=addComponentToWorkspace('motor-servo',410,160); addCircuitTitle('서보 모터 회로');
+    setTimeout(()=>{wire(pinByName(ar,'5V'),pinByName(sv,'p1'));wire(pinByName(ar,'GND'),pinByName(sv,'p2'));wire(pinByName(ar,'D9'),pinByName(sv,'sig')); saveAuto();},30);
+    return '서보 모터 회로를 배치했습니다.';
+  }
+  if(q.includes('모터')||q.includes('dc motor')||q.includes('motor')){
+    clearCircuit(); const bat=addComponentToWorkspace('battery-9v',90,170), sw=addComponentToWorkspace('switch-slide',270,190), m=addComponentToWorkspace('motor-dc',470,165); setClosed(sw,true); addCircuitTitle('DC 모터 회로');
+    setTimeout(()=>{wire(pinByName(bat,'vcc'),pinsOf(sw)[0]);wire(pinsOf(sw)[1],pinByName(m,'p1'));wire(pinByName(m,'p2'),pinByName(bat,'gnd')); runSimulation();},30);
+    return 'DC 모터 회로를 배치했습니다.';
+  }
+  if(q.includes('버튼')||q.includes('button')||q.includes('스위치')){
+    clearCircuit(); const bat=addComponentToWorkspace('battery-9v',80,170), sw=addComponentToWorkspace('switch-push',250,190), r=addComponentToWorkspace('resistor',390,200), led=addComponentToWorkspace('led-green',540,180); setClosed(sw,true); setRes(r,220); addCircuitTitle('버튼 LED 회로');
+    setTimeout(()=>{wire(pinByName(bat,'vcc'),pinsOf(sw)[0]);wire(pinsOf(sw)[1],pinsOf(r)[0]);wire(pinsOf(r)[1],pinByName(led,'a'));wire(pinByName(led,'k'),pinByName(bat,'gnd')); runSimulation();},30);
+    return '버튼 LED 회로를 배치했습니다.';
+  }
+  if(q.includes('전체')||q.includes('종류')||q.includes('목록')||q.includes('logic')){
+    return '사용 가능 명령: 직렬회로, 병렬회로, AND, OR, NOT, NAND, NOR, XOR, XNOR, 버튼 LED, 아두이노 13번 LED, 모터 회로, 서보 회로';
+  }
+  return placeBreadboardLineCircuit('basic');
+};
+
+/* ===== AI SMART BUILDER v13: flexible Korean command parser ===== */
+function normalizeAIText(q){
+  return (q||'').toLowerCase()
+    .replace(/\s+/g,' ')
+    .replace(/에이엔디/g,'and').replace(/오알/g,'or')
+    .replace(/엔드/g,'and').replace(/앤드/g,'and')
+    .replace(/낫/g,'not').replace(/논리곱/g,'and').replace(/논리합/g,'or')
+    .replace(/부정/g,'not').replace(/반전/g,'not')
+    .replace(/오실로스코프|오실로스콥|스코프/g,'oscilloscope')
+    .replace(/멀티미터|테스터기/g,'multimeter')
+    .replace(/엘이디/g,'led');
+}
+function extractLedCount(q){
+  const m = q.match(/led\s*(\d+)\s*개/) || q.match(/(\d+)\s*개\s*led/) || q.match(/led\s*(\d+)/);
+  let n = m ? parseInt(m[1],10) : 1;
+  if(!Number.isFinite(n) || n<1) n=1;
+  return Math.max(1, Math.min(8, n));
+}
+function detectGate(q){
+  if(q.includes('xnor')) return 'xnor';
+  if(q.includes('xor')) return 'xor';
+  if(q.includes('nand')) return 'nand';
+  if(q.includes('nor')) return 'nor';
+  if(q.includes('and')) return 'and';
+  if(q.includes('or')) return 'or';
+  if(q.includes('not')) return 'not';
+  if(q.includes('직렬') || q.includes('series') || q.includes('serial')) return 'series';
+  if(q.includes('병렬') || q.includes('parallel')) return 'parallel';
+  return 'basic';
+}
+function wantsInstrument(q){
+  if(q.includes('oscilloscope')) return 'oscilloscope';
+  if(q.includes('multimeter') || q.includes('전압') || q.includes('전류') || q.includes('측정')) return 'multimeter';
+  return null;
+}
+function addAINote(text,x,y){
+  const n=document.createElement('div'); n.className='workspace-component comp-label ai-note';
+  n.dataset.baseType='label'; n.dataset.type='label'; n.dataset.compId=nextComponentId++;
+  n.style.left=x+'px'; n.style.top=y+'px'; n.textContent=text; world.appendChild(n); return n;
+}
+function pinToHole(comp,pname,bb,hole){ alignPinToHole(comp,pname,bb,hole); }
+function setLedChainPreview(leds,on){ leds.forEach(l=>setLedPreview(l,on)); }
+function outputForGate(g,s1,s2){
+  if(g==='and'||g==='series') return s1&&s2;
+  if(g==='or'||g==='parallel') return s1||s2;
+  if(g==='nand') return !(s1&&s2);
+  if(g==='nor') return !(s1||s2);
+  if(g==='xor') return s1!==s2;
+  if(g==='xnor') return s1===s2;
+  if(g==='not') return !s1;
+  return true;
+}
+function makeSmartBreadboardCircuit(opts={}){
+  clearCircuit();
+  const gate = opts.gate || 'basic';
+  const ledCount = Math.max(1, Math.min(8, opts.ledCount||1));
+  const instrument = opts.instrument || null;
+  const seriesLEDs = opts.seriesLEDs !== false;
+  const bb = addComponentToWorkspace('breadboard-small', 250, 150);
+  const bat = addComponentToWorkspace('battery-9v', 55, 185);
+  addCircuitTitle(`${gate.toUpperCase()} 회로 · LED ${ledCount}개${instrument?' · '+(instrument==='oscilloscope'?'오실로스코프':'멀티미터')+' 측정':''}`, 260, 105);
+
+  const s1Default = !(gate==='nor' || gate==='not');
+  const s2Default = !(gate==='or' || gate==='xor' || gate==='parallel');
+  let sw1=null, sw2=null;
+  if(gate!=='basic'){
+    sw1 = addComponentToWorkspace(gate==='not'?'switch-slide':'switch-push',0,0); setClosed(sw1,s1Default);
+    if(!['not','basic'].includes(gate)){ sw2 = addComponentToWorkspace('switch-push',0,0); setClosed(sw2,s2Default); }
+  }
+  const r = addComponentToWorkspace('resistor',0,0); setRes(r, ledCount>=4 ? 100 : 220);
+  const leds=[];
+  const colors=['green','red','blue','green','red','blue','green','red'];
+  for(let i=0;i<ledCount;i++) leds.push(addComponentToWorkspace('led-'+colors[i%colors.length],0,0));
+
+  // Input area placement. Keep enough room so parts do not overlap.
+  if(gate==='and'||gate==='series'||gate==='nand'){
+    pinToHole(sw1,'p1',bb,'a2-3'); if(sw2) pinToHole(sw2,'p1',bb,'a2-8'); pinToHole(r,'p1',bb,'a2-13');
+  }else if(gate==='or'||gate==='parallel'||gate==='nor'||gate==='xor'||gate==='xnor'){
+    pinToHole(sw1,'p1',bb,'a2-4'); if(sw2) pinToHole(sw2,'p1',bb,'f2-4'); pinToHole(r,'p1',bb,'a2-13');
+  }else if(gate==='not'){
+    pinToHole(sw1,'p1',bb,'a2-5'); pinToHole(r,'p1',bb,'a2-12');
+  }else{
+    pinToHole(r,'p1',bb,'a2-7');
+  }
+
+  // LED chain placement: each LED uses two adjacent columns; leave 3 columns spacing.
+  let firstLedCol = ledCount>=4 ? 17 : 18;
+  if(ledCount>=6) firstLedCol = 13;
+  leds.forEach((led,i)=>{
+    const col = Math.min(28, firstLedCol + i*2);
+    pinToHole(led,'a',bb,`a1-${col}`);
+  });
+
+  let meter=null;
+  if(instrument==='oscilloscope'){
+    meter=addComponentToWorkspace('oscilloscope',1040,245);
+    addAINote('CH1은 LED 출력, GND는 -레일에 연결',1000,335);
+  }else if(instrument==='multimeter'){
+    meter=addComponentToWorkspace('multimeter',1030,245);
+    addAINote('측정기는 출력 전압 확인용',1000,355);
+  }
+
+  setTimeout(()=>{
+    wireToBoard(pinByName(bat,'vcc'),bb,'railTopPlus-1','#e11d23');
+    wireToBoard(pinByName(bat,'gnd'),bb,'railTopMinus-1','#111827');
+    let outputHole = 'a0-13';
+
+    if(gate==='and'||gate==='series'||gate==='nand'){
+      wireBoard(bb,'railTopPlus-3','a0-3','#e11d23');
+      if(sw2){ wireBoard(bb,'a4-7','a0-8','#334155'); wireBoard(bb,'a4-12','a0-13','#334155'); }
+      else wireBoard(bb,'a4-7','a0-13','#334155');
+      outputHole='a4-17';
+      wireBoard(bb,'a4-17',`a0-${firstLedCol}`,'#334155');
+    } else if(gate==='or'||gate==='parallel'||gate==='nor'||gate==='xor'||gate==='xnor'){
+      wireBoard(bb,'railTopPlus-4','a0-4','#e11d23');
+      if(sw2) wireBoard(bb,'railTopPlus-4','f0-4','#e11d23');
+      wireBoard(bb,'a4-8','a0-13','#334155');
+      if(sw2) wireBoard(bb,'f4-8','a0-13','#334155');
+      wireBoard(bb,'a4-17',`a0-${firstLedCol}`,'#334155');
+      outputHole='a4-17';
+    } else if(gate==='not'){
+      // Pull-up LED path, switch pulls input to GND: beginner visual NOT demo.
+      wireBoard(bb,'railTopPlus-12','a0-12','#e11d23');
+      wireBoard(bb,'a4-16',`a0-${firstLedCol}`,'#334155');
+      wireBoard(bb,'a4-9','railTopMinus-9','#111827');
+      outputHole='a4-16';
+    } else {
+      wireBoard(bb,'railTopPlus-7','a0-7','#e11d23');
+      wireBoard(bb,'a4-11',`a0-${firstLedCol}`,'#334155');
+      outputHole='a4-11';
+    }
+
+    // LED chain wiring. Last LED cathode returns to minus rail.
+    for(let i=0;i<leds.length-1;i++){
+      const kcol = Math.min(29, firstLedCol + i*2 + 1);
+      const nextA = Math.min(28, firstLedCol + (i+1)*2);
+      wireBoard(bb,`a1-${kcol}`,`a1-${nextA}`,'#334155');
+    }
+    const lastK = Math.min(29, firstLedCol + (leds.length-1)*2 + 1);
+    wireBoard(bb,`a1-${lastK}`,`railTopMinus-${Math.min(29,lastK)}`,'#111827');
+
+    if(meter){
+      const outCol = firstLedCol;
+      if(instrument==='oscilloscope'){
+        wireToBoard(pinByName(meter,'p1'),bb,`a1-${outCol}`,'#f59e0b');
+        wireToBoard(pinByName(meter,'p2'),bb,`railTopMinus-${Math.min(29,lastK)}`,'#111827');
+      }else{
+        wireToBoard(pinByName(meter,'p1'),bb,`a1-${outCol}`,'#f59e0b');
+        wireToBoard(pinByName(meter,'p2'),bb,`railTopMinus-${Math.min(29,lastK)}`,'#111827');
+      }
+    }
+
+    updateBreadboardContactVisuals();
+    const out = outputForGate(gate, sw1?sw1.dataset.closed==='true':true, sw2?sw2.dataset.closed==='true':false);
+    if(['nand','nor','xor','xnor','not'].includes(gate)) setLedChainPreview(leds,out);
+    runSimulation();
+    if(['nand','nor','xor','xnor','not'].includes(gate)) setLedChainPreview(leds,out);
+    $('#electricInfo').textContent = `${gate.toUpperCase()} 입력 ${sw1?(sw1.dataset.closed==='true'?'1':'0'):'1'}${sw2?','+(sw2.dataset.closed==='true'?'1':'0'):''} → 출력 ${out?'ON':'OFF'}${instrument?' / 측정기 연결됨':''}`;
+    saveAuto();
+  },80);
+
+  const instrumentText = instrument ? ` ${instrument==='oscilloscope'?'오실로스코프로 출력 파형을':'멀티미터로 출력 전압을'} 측정하도록 연결했습니다.` : '';
+  return `${gate.toUpperCase()} 회로를 요청대로 자동 구성했습니다. LED ${ledCount}개를 ${seriesLEDs?'직렬':'출력단'}로 연결했고, 버튼 ON/OFF에 따라 LED가 반응합니다.${instrumentText}`;
+}
+function makeArduinoFromText(q){
+  clearCircuit();
+  const pinMatch = q.match(/(\d+)\s*번/) || q.match(/d\s*(\d+)/);
+  const pin = pinMatch ? Math.min(13,Math.max(0,parseInt(pinMatch[1],10))) : 13;
+  const ledCount=extractLedCount(q);
+  const ar=addComponentToWorkspace('arduino',80,120);
+  let lastPin = pinByName(ar,'D'+pin);
+  let x=380;
+  const leds=[];
+  for(let i=0;i<ledCount;i++){
+    const r=addComponentToWorkspace('resistor',x,185); setRes(r,220);
+    const led=addComponentToWorkspace('led-'+(['red','green','blue'][i%3]),x+115,165); leds.push(led);
+    wire(lastPin,pinsOf(r)[0]); wire(pinsOf(r)[1],pinByName(led,'a'));
+    lastPin=pinByName(led,'k'); x+=160;
+  }
+  wire(lastPin,pinByName(ar,'GND'));
+  addCircuitTitle(`Arduino D${pin} LED ${ledCount}개`,180,90);
+  $('#codeEditor').value=`void setup() {\n  pinMode(${pin}, OUTPUT);\n}\n\nvoid loop() {\n  digitalWrite(${pin}, HIGH);\n}`;
+  parseArduinoCode(); runSimulation(); setLedChainPreview(leds,true); saveAuto();
+  return `아두이노 D${pin}번에 LED ${ledCount}개 회로를 만들고 코드까지 넣었습니다.`;
+}
+window.processAICircuit=function(q){
+  const raw=q||''; const text=normalizeAIText(raw);
+  try{
+    if(text.includes('아두이노')||text.includes('arduino')||/\d+\s*번/.test(text)) return makeArduinoFromText(text);
+    if(text.includes('모터')||text.includes('motor')){
+      clearCircuit(); const bat=addComponentToWorkspace('battery-9v',90,170), sw=addComponentToWorkspace('switch-slide',270,190), m=addComponentToWorkspace('motor-dc',470,165); setClosed(sw,true); addCircuitTitle('DC 모터 회로');
+      setTimeout(()=>{wire(pinByName(bat,'vcc'),pinsOf(sw)[0]);wire(pinsOf(sw)[1],pinByName(m,'p1'));wire(pinByName(m,'p2'),pinByName(bat,'gnd')); runSimulation(); saveAuto();},30); return 'DC 모터 회로를 구성했습니다.';
+    }
+    if(text.includes('서보')){
+      clearCircuit(); const ar=addComponentToWorkspace('arduino',90,120), sv=addComponentToWorkspace('motor-servo',410,160); addCircuitTitle('서보 모터 회로');
+      setTimeout(()=>{wire(pinByName(ar,'5V'),pinByName(sv,'p1'));wire(pinByName(ar,'GND'),pinByName(sv,'p2'));wire(pinByName(ar,'D9'),pinByName(sv,'sig')); saveAuto();},30); return '서보 모터 회로를 구성했습니다.';
+    }
+    if(text.includes('목록')||text.includes('도움')||text.includes('가능')) return '예시: “AND 회로에 LED 4개 직렬로 달아줘”, “AND 회로 오실로스코프로 측정해줘”, “OR 회로 LED 2개”, “아두이노 13번 LED 3개”, “NOT 회로 멀티미터로 측정”.';
+    const gate=detectGate(text);
+    const ledCount=extractLedCount(text);
+    const instrument=wantsInstrument(text);
+    return makeSmartBreadboardCircuit({gate,ledCount,instrument,seriesLEDs:text.includes('직렬')||gate==='and'||gate==='series'});
+  }catch(err){
+    console.error(err);
+    return '요청을 해석하다가 오류가 나서 기본 LED 회로로 대신 만들었습니다. 다시 한 번 문장으로 입력해 주세요.';
+  }
+};
+
+/* =========================================================
+   CircuitAI 안정화 PRO 패치 v2026-05-28
+   - 자연어 조합 명령 강화: AND/OR/NOT + LED/모터/부저/측정기
+   - 매크로형 고정 문장 대신 키워드 조합으로 회로 생성
+   - 부품 겹침 최소화, 버튼 ON 눌림 표시, 출력장치 동시 연결
+========================================================= */
+(function(){
+  const oldProcess = window.processAICircuit;
+
+  function koNorm(s){
+    return (s||'').toLowerCase()
+      .replace(/\s+/g,' ')
+      .replace(/엔|에는|에다가|에다|에서|으로|로/g,' ')
+      .replace(/그리고|랑|와|과|및/g,' and ')
+      .replace(/오실로스코프|오실로스콥|스코프/g,'oscilloscope')
+      .replace(/멀티미터|테스터기|전압계|전류계/g,'multimeter')
+      .replace(/엘이디|led등/g,'led')
+      .replace(/부저|버저|buzzer/g,'buzzer')
+      .replace(/모터|motor/g,'motor')
+      .replace(/빼고|제외|삭제/g,' remove ')
+      .trim();
+  }
+  function getGateSmart(t){
+    if(/x\s*nor|xnor/.test(t)) return 'xnor';
+    if(/x\s*or|xor/.test(t)) return 'xor';
+    if(/nand/.test(t)) return 'nand';
+    if(/nor/.test(t) && !/xnor/.test(t)) return 'nor';
+    if(/\bnot\b|반전|인버터/.test(t)) return 'not';
+    if(/\band\b|직렬|둘 다|두개 다|모두/.test(t)) return 'and';
+    if(/\bor\b|병렬|둘 중|하나만|하나라도/.test(t)) return 'or';
+    return 'basic';
+  }
+  function getCountSmart(t, word, fallback){
+    const patterns = [
+      new RegExp(word+'\\s*(\\d+)\\s*개'),
+      new RegExp('(\\d+)\\s*개\\s*'+word),
+      new RegExp(word+'\\s*(\\d+)')
+    ];
+    for(const r of patterns){ const m=t.match(r); if(m) return Math.max(1, Math.min(8, parseInt(m[1],10)||fallback)); }
+    return fallback;
+  }
+  function hasRemoveBefore(t, word){
+    return new RegExp(word+'.{0,8}remove|remove.{0,8}'+word).test(t);
+  }
+  function addTinyNode(x,y,label=''){
+    const n=document.createElement('div');
+    n.className='workspace-component comp-route smart-node';
+    n.dataset.compId=nextComponentId++;
+    n.dataset.type='route';
+    n.dataset.baseType='route';
+    n.style.left=x+'px'; n.style.top=y+'px'; n.style.width='12px'; n.style.height='12px';
+    n.innerHTML='<div style="width:12px;height:12px;border-radius:50%;background:#334155;border:2px solid #e2e8f0;box-shadow:0 2px 4px rgba(0,0,0,.25)"></div>';
+    world.appendChild(n); addPin(n,'route',6,6,label); return n;
+  }
+  function p(comp,name){return pinByName(comp,name) || pinsOf(comp)[0];}
+  function w(a,b){ if(a&&b) wire(a,b); }
+  function setOn(comp,on){ if(comp&&comp.dataset.baseType==='switch') setClosed(comp,on); }
+  function title(txt){ addCircuitTitle(txt,120,78); }
+  function stableRun(extraPreview){
+    setTimeout(()=>{ try{ runSimulation(); if(extraPreview) extraPreview(); saveAuto(); }catch(e){ console.warn(e); } }, 80);
+  }
+  function loadPos(i){ return {x:590 + (i%3)*155, y:180 + Math.floor(i/3)*105}; }
+
+  function buildCombinationCircuit(opts){
+    clearCircuit();
+    const gate=opts.gate||'basic';
+    const ledCount=opts.ledCount||0;
+    const motorCount=opts.motorCount||0;
+    const buzzerCount=opts.buzzerCount||0;
+    const instrument=opts.instrument||null;
+    const bb = addComponentToWorkspace('breadboard-small', 290, 130);
+    const bat = addComponentToWorkspace('battery-9v', 55, 190);
+    const outNode = addTinyNode(520,238,'OUT');
+    const gndNode = addTinyNode(520,320,'GND');
+    title(`${gate.toUpperCase()} 조합 회로`);
+    addAINote('출력장치들은 OUT/GND에 병렬 연결됩니다.\nLED 여러 개 요청 시 LED끼리는 직렬 체인으로 배치합니다.',600,75);
+
+    let s1=null, s2=null;
+    if(gate==='basic'){
+      const sw=addComponentToWorkspace('switch-slide',260,220); setOn(sw,true); s1=sw;
+      w(p(bat,'vcc'), p(sw,'p1')); w(p(sw,'p2'), p(outNode,'route'));
+    }else if(gate==='and' || gate==='nand'){
+      s1=addComponentToWorkspace('switch-push',245,202); s2=addComponentToWorkspace('switch-push',345,202);
+      setOn(s1,true); setOn(s2,true);
+      w(p(bat,'vcc'), p(s1,'p1')); w(p(s1,'p2'), p(s2,'p1')); w(p(s2,'p2'), p(outNode,'route'));
+    }else if(gate==='or' || gate==='nor' || gate==='xor' || gate==='xnor'){
+      s1=addComponentToWorkspace('switch-push',245,180); s2=addComponentToWorkspace('switch-push',245,285);
+      setOn(s1,true); setOn(s2, gate==='or' || gate==='nor' ? false : false);
+      w(p(bat,'vcc'), p(s1,'p1')); w(p(bat,'vcc'), p(s2,'p1'));
+      w(p(s1,'p2'), p(outNode,'route')); w(p(s2,'p2'), p(outNode,'route'));
+    }else if(gate==='not'){
+      s1=addComponentToWorkspace('switch-push',275,220); setOn(s1,false);
+      // 시각적 NOT: 스위치가 OFF일 때 출력 ON, ON이면 출력 OFF로 표시
+      w(p(bat,'vcc'), p(outNode,'route'));
+      w(p(s1,'p1'), p(outNode,'route')); w(p(s1,'p2'), p(gndNode,'route'));
+    }
+    w(p(bat,'gnd'), p(gndNode,'route'));
+
+    const loads=[];
+    let idx=0;
+    if(ledCount>0){
+      let prev = p(outNode,'route');
+      for(let i=0;i<ledCount;i++){
+        const pos=loadPos(idx++);
+        const r=addComponentToWorkspace('resistor',pos.x,pos.y+12); setRes(r, ledCount>=4?100:220);
+        const led=addComponentToWorkspace('led-'+(['green','red','blue'][i%3]),pos.x+95,pos.y-4);
+        loads.push(led);
+        w(prev, pinsOf(r)[0]); w(pinsOf(r)[1], p(led,'a'));
+        prev=p(led,'k');
+      }
+      w(prev, p(gndNode,'route'));
+    }
+    for(let i=0;i<motorCount;i++){
+      const pos=loadPos(idx++); const m=addComponentToWorkspace('motor-dc',pos.x,pos.y); loads.push(m);
+      w(p(outNode,'route'), p(m,'p1')); w(p(m,'p2'), p(gndNode,'route'));
+    }
+    for(let i=0;i<buzzerCount;i++){
+      const pos=loadPos(idx++); const bz=addComponentToWorkspace('buzzer',pos.x,pos.y+5); loads.push(bz);
+      w(p(outNode,'route'), p(bz,'p1')); w(p(bz,'p2'), p(gndNode,'route'));
+    }
+    let meter=null;
+    if(instrument==='multimeter'){
+      meter=addComponentToWorkspace('multimeter',900,185); meter.dataset.mode='V';
+      w(p(meter,'p1'), p(outNode,'route')); w(p(meter,'p2'), p(gndNode,'route'));
+    }else if(instrument==='oscilloscope'){
+      meter=addComponentToWorkspace('oscilloscope',890,205);
+      w(p(meter,'p1'), p(outNode,'route')); w(p(meter,'p2'), p(gndNode,'route'));
+    }
+
+    function logicOut(){
+      const a=s1 ? s1.dataset.closed==='true' : true;
+      const b=s2 ? s2.dataset.closed==='true' : false;
+      if(gate==='and') return a&&b;
+      if(gate==='or') return a||b;
+      if(gate==='nand') return !(a&&b);
+      if(gate==='nor') return !(a||b);
+      if(gate==='xor') return a!==b;
+      if(gate==='xnor') return a===b;
+      if(gate==='not') return !a;
+      return a;
+    }
+    function preview(){
+      const on=logicOut();
+      loads.forEach(c=>{
+        if(c.dataset.baseType==='led') setLedPreview(c,on);
+        if(c.dataset.baseType==='motor') $('.motor-dc-graphic',c)?.classList.toggle('motor-on',on);
+        if(c.dataset.baseType==='buzzer') $('.buzzer-graphic',c)?.classList.toggle('buzz-on',on);
+      });
+      if(meter && meter.dataset.baseType==='multimeter'){
+        meter.dataset.reading = on ? '약 9.00 V' : '0.00 V'; updateMultimeterScreen(meter,meter.dataset.reading);
+      }
+      $('#electricInfo').textContent = `${gate.toUpperCase()} 출력 ${on?'ON':'OFF'} / LED ${ledCount}개, 모터 ${motorCount}개, 부저 ${buzzerCount}개${instrument?' 측정 연결':''}`;
+    }
+    stableRun(preview);
+    return `${gate.toUpperCase()} 회로에 ${ledCount?`LED ${ledCount}개 `:''}${motorCount?`모터 ${motorCount}개 `:''}${buzzerCount?`부저 ${buzzerCount}개 `:''}${instrument?`${instrument==='multimeter'?'멀티미터':'오실로스코프'} `:''}를 조합해서 안정적으로 배치했습니다.`;
+  }
+
+  function smartParseAndBuild(raw){
+    const t=koNorm(raw);
+    const gate=getGateSmart(t);
+    const instrument = t.includes('oscilloscope') ? 'oscilloscope' : (t.includes('multimeter') || /측정|전압|전류/.test(t) ? 'multimeter' : null);
+
+    let wantsLed = /led|전구|불/.test(t);
+    let wantsMotor = /motor|dc/.test(t);
+    let wantsBuzzer = /buzzer|소리|도레미|삐/.test(t);
+
+    if(hasRemoveBefore(t,'led')) wantsLed=false;
+    if(hasRemoveBefore(t,'motor')) wantsMotor=false;
+    if(hasRemoveBefore(t,'buzzer')) wantsBuzzer=false;
+    if(!wantsLed && !wantsMotor && !wantsBuzzer) wantsLed=true;
+
+    const ledCount = wantsLed ? getCountSmart(t,'led',1) : 0;
+    const motorCount = wantsMotor ? getCountSmart(t,'motor',1) : 0;
+    const buzzerCount = wantsBuzzer ? getCountSmart(t,'buzzer',1) : 0;
+
+    return buildCombinationCircuit({gate,ledCount,motorCount,buzzerCount,instrument});
+  }
+
+  window.processAICircuit=function(q){
+    try{
+      const t=koNorm(q);
+      if(/도움|목록|가능|예시/.test(t)) return '가능한 예시: AND회로에 모터 달아줘, OR회로에 부저랑 LED 달아줘, NOT회로에 LED 빼고 모터달아줘, AND회로 LED 4개 직렬 + 멀티미터 측정, 병렬회로 오실로스코프로 측정.';
+      if(/아두이노|arduino|\d+\s*번/.test(t) && typeof makeArduinoFromText==='function') return makeArduinoFromText(t);
+      return smartParseAndBuild(q);
+    }catch(e){
+      console.error('Smart builder error',e);
+      if(typeof oldProcess==='function') return oldProcess(q);
+      return '오류가 나서 기본 LED 회로로 구성했습니다.';
+    }
+  };
+})();

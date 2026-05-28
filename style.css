@@ -214,3 +214,92 @@ body{background:#fff!important;color:#0f172a!important;}
 .wire-svg line{stroke-width:5!important;filter:drop-shadow(0 2px 2px rgba(15,23,42,.18));stroke-linecap:round!important}.powered-wire{filter:drop-shadow(0 0 4px rgba(34,197,94,.65))!important}.pin{width:16px!important;height:16px!important;border:3px solid #eef2f7!important;background:#475569!important;box-shadow:0 1px 3px rgba(15,23,42,.25)!important;z-index:80!important}.pin:hover{background:#22c55e!important;transform:translate(-50%,-50%) scale(1.18)!important}.contact-pin{background:#22c55e!important;box-shadow:0 0 0 4px rgba(34,197,94,.18),0 1px 3px rgba(15,23,42,.2)!important}
 .comp-breadboard{z-index:5!important;filter:none!important}.bb-body{width:100%!important;height:100%!important;position:relative!important;overflow:hidden!important;background:#f8fafc!important;border:2px solid #2563eb!important;border-radius:18px!important;box-shadow:0 9px 20px rgba(15,23,42,.10),inset 0 1px 0 rgba(255,255,255,.9)!important}.bb-body::before{display:none!important}.bb-body::after{content:''!important;position:absolute!important;left:0!important;right:0!important;top:248px!important;height:26px!important;background:linear-gradient(180deg,#dbe2ea,#f8fafc 50%,#dbe2ea)!important;border-top:1px solid #cbd5e1!important;border-bottom:1px solid #cbd5e1!important;pointer-events:none!important}.bb-groove{display:none!important}.bb-rail{position:absolute!important;left:82px!important;right:55px!important;height:2px!important;border-radius:999px!important;opacity:.95!important}.rail-top-plus{top:54px!important;background:#ef4444!important}.rail-top-minus{top:84px!important;background:#2563eb!important}.rail-bottom-plus{top:388px!important;background:#ef4444!important}.rail-bottom-minus{top:418px!important;background:#2563eb!important}.bb-sign{position:absolute!important;font-size:22px!important;font-weight:900!important;line-height:1!important;top:-12px!important}.bb-sign.left{left:-42px!important}.bb-sign.right{right:-32px!important}.rail-top-plus .bb-sign,.rail-bottom-plus .bb-sign{color:#ef4444!important}.rail-top-minus .bb-sign,.rail-bottom-minus .bb-sign{color:#2563eb!important}.comp-breadboard .pin{width:8px!important;height:8px!important;border:0!important;border-radius:1.5px!important;background:#111827!important;box-shadow:0 1px 2px rgba(15,23,42,.30)!important;z-index:30!important}.comp-breadboard .pin:hover{background:#22c55e!important;transform:translate(-50%,-50%) scale(1.55)!important;z-index:999!important}.comp-breadboard .pin.contact-pin{background:#22c55e!important;box-shadow:0 0 0 4px rgba(34,197,94,.22)!important}.bb-row-label{position:absolute!important;left:48px!important;font-size:18px!important;font-weight:800!important;color:#475569!important;pointer-events:none!important}.bb-num{position:absolute!important;font-size:15px!important;color:#475569!important;font-weight:800!important;pointer-events:none!important}
 .battery-graphic{background:linear-gradient(180deg,#111827,#020617)!important;border:0!important;border-radius:8px!important;color:#fff!important;font-size:27px!important}.battery-graphic:before{top:22px!important;left:22px!important;font-size:24px!important}.battery-graphic:after{top:22px!important;right:24px!important;font-size:24px!important}.batt-val{font-size:28px!important}.comp-battery .pin{width:18px!important;height:18px!important;background:#64748b!important}.resistor-graphic{height:24px!important;border-radius:999px!important;box-shadow:0 4px 10px rgba(15,23,42,.15)!important}.comp-resistor .pin,.comp-potentiometer .pin{width:12px!important;height:12px!important;border:3px solid #bbf7d0!important;background:#64748b!important}.led-graphic{height:42px!important;width:42px!important;border:0!important;margin:auto;box-shadow:inset -5px -7px 12px rgba(0,0,0,.25),inset 2px 2px 8px rgba(255,255,255,.8),0 5px 13px rgba(15,23,42,.18)!important}.comp-led .pin{width:13px!important;height:13px!important;border:3px solid #e2e8f0!important;background:#64748b!important}
+
+/* FINAL FIX: LED ON 상태가 뒤쪽 led-graphic !important 규칙에 덮이지 않게 가장 마지막에 다시 지정 */
+.led-graphic.led-on{
+  box-shadow:0 0 18px currentColor,0 0 45px currentColor,0 0 85px currentColor,inset 2px 2px 12px rgba(255,255,255,.95)!important;
+  filter:brightness(1.65) saturate(1.45)!important;
+}
+.led-graphic.led-on::after{
+  content:'';
+  position:absolute;
+  inset:-13px;
+  border-radius:50%;
+  background:currentColor;
+  opacity:.22;
+  filter:blur(12px);
+  pointer-events:none;
+}
+
+/* v12: push button looks physically pressed when ON */
+.switch-push-graphic{
+  position:relative!important;
+  transition:transform .16s ease, box-shadow .16s ease, filter .16s ease, background .16s ease!important;
+  background:radial-gradient(circle at 35% 28%, #ff6b6b 0 18%, #ef4444 35%, #b91c1c 78%)!important;
+  border:4px solid #111827!important;
+  box-shadow:0 7px 0 #7f1d1d, 0 11px 16px rgba(15,23,42,.32), inset 0 4px 8px rgba(255,255,255,.42), inset 0 -6px 8px rgba(0,0,0,.24)!important;
+}
+.switch-push-graphic::after{
+  content:'';
+  position:absolute;
+  left:10px;
+  top:6px;
+  width:18px;
+  height:10px;
+  border-radius:999px;
+  background:rgba(255,255,255,.48);
+  transform:rotate(-18deg);
+  pointer-events:none;
+}
+.switch-on .switch-push-graphic{
+  transform:translateY(7px) scale(.96)!important;
+  background:radial-gradient(circle at 50% 56%, #dc2626 0 42%, #991b1b 78%)!important;
+  box-shadow:0 1px 0 #7f1d1d, 0 3px 6px rgba(15,23,42,.24), inset 0 8px 13px rgba(0,0,0,.34), inset 0 -2px 4px rgba(255,255,255,.22)!important;
+  filter:brightness(.92) saturate(1.08)!important;
+}
+.switch-on .switch-push-graphic::after{
+  opacity:.18;
+  top:12px;
+}
+.switch-on.comp-switch .pin{
+  transform:translate(-50%,-50%)!important;
+}
+
+/* STABLE FINAL additions */
+.circuit-title{
+  padding:8px 12px;
+  border-radius:999px;
+  background:#ffffff;
+  border:1px solid #dbeafe;
+  color:#1e3a8a;
+  font-weight:900;
+  box-shadow:0 4px 12px rgba(37,99,235,.12);
+  pointer-events:none;
+  z-index:60!important;
+}
+.wire-svg line{stroke-linejoin:round;}
+.workspace-component.comp-label{cursor:default;}
+
+/* ===== AI SMART BUILDER v13 instruments ===== */
+.oscilloscope-graphic{background:#0f172a!important;border:3px solid #334155!important;border-radius:12px!important;overflow:hidden;color:#22c55e!important;}
+.oscilloscope-graphic::before{content:''!important;position:absolute;left:12px;top:12px;width:72px!important;height:46px!important;background:#020617!important;border:1px solid #475569!important;border-radius:6px!important;}
+.oscilloscope-graphic::after{content:'';position:absolute;left:16px;top:35px;width:64px;height:16px;border-top:3px solid #22c55e;border-radius:50%;filter:drop-shadow(0 0 5px #22c55e);animation:scopeWave .9s linear infinite;}
+@keyframes scopeWave{0%{transform:translateX(-6px) scaleY(.55)}50%{transform:translateX(4px) scaleY(1.2)}100%{transform:translateX(-6px) scaleY(.55)}}
+.comp-oscilloscope .pin{width:13px!important;height:13px!important;background:#64748b!important;}
+.ai-note{padding:7px 10px;border-radius:10px;background:#ecfeff;border:1px solid #a5f3fc;color:#155e75;font-weight:800;font-size:12px;pointer-events:none;z-index:70!important;}
+
+/* Multimeter stable measurement patch */
+.multimeter-graphic{background:linear-gradient(180deg,#facc15,#eab308)!important;border:3px solid #111827!important;border-radius:12px!important;padding-top:12px!important;gap:8px!important;}
+.multimeter-graphic:after{content:'V  A  Ω';position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:11px;font-weight:900;color:#1f2937;letter-spacing:2px;}
+.screen{min-width:58px;text-align:right;background:#052e16!important;color:#86efac!important;border:2px solid #111827!important;border-radius:6px!important;padding:6px 7px!important;font-size:13px!important;box-shadow:inset 0 2px 7px rgba(0,0,0,.55)!important;}
+.screen.meter-live{color:#bbf7d0!important;text-shadow:0 0 7px #22c55e;}
+
+/* 안정화 PRO 패치: 출력 노드/측정/버튼 눌림 보강 */
+.smart-node{z-index:30!important;cursor:default!important}
+.ai-note{background:#eef6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:999px;padding:9px 14px;font-weight:900;font-size:13px;white-space:pre-line;box-shadow:0 3px 8px rgba(15,23,42,.08)}
+.switch-on .switch-push-graphic{transform:translateY(5px) scale(.92)!important;box-shadow:inset 0 5px 12px rgba(0,0,0,.45),0 1px 2px rgba(15,23,42,.18)!important;background:linear-gradient(180deg,#991b1b,#ef4444)!important}
+.switch-on.comp-switch{transform:translateY(2px)}
+.buzzer-graphic.buzz-on::after{content:'♪';position:absolute;right:-14px;top:-15px;color:#7c3aed;font-size:22px;animation:buzzNote .45s infinite alternate}
+@keyframes buzzNote{to{transform:translateY(-7px) rotate(10deg);opacity:.35}}
+.oscilloscope-graphic::after{content:'~ ~ ~';position:absolute;left:18px;top:25px;color:#22c55e;font-family:monospace;font-weight:900;text-shadow:0 0 8px #22c55e;animation:scopeWave .8s linear infinite}
+@keyframes scopeWave{50%{letter-spacing:3px;opacity:.65}}
