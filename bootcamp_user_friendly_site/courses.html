@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="동양미래대학교 반도체부트캠프 사이트를 사용자 중심으로 개선한 다중 페이지 웹사이트 시안입니다." />
+  <link rel="stylesheet" href="style.css" />
+  <title>교육과정 안내 | 반도체부트캠프 개선 시안</title>
+</head>
+<body id="top">
+  <a class="skip-link" href="#main">본문으로 바로가기</a>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="index.html" aria-label="메인으로 이동">
+          <img src="assets/site_logo.png" alt="동양미래대학교 반도체부트캠프사업단" />
+          <span class="brand-text">
+            <strong>사용자 중심 개선 시안</strong>
+            <small>정보 탐색과 신청 편의성을 높인 화면</small>
+          </span>
+        </a>
+
+        <button class="menu-toggle" type="button" aria-label="메뉴 열기" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+
+        <nav class="main-nav" aria-label="주요 메뉴">
+          <a href="courses.html">교육과정</a>
+          <a href="apply.html">신청방법</a>
+          <a href="facility.html">실습장비</a>
+          <a href="community.html">공지·후기</a>
+          <a href="jobs.html">채용정보</a>
+          <a href="faq.html">FAQ</a>
+          <a class="nav-cta" href="courses.html#open">신청 가능 과정</a>
+        </nav>
+
+        <a class="school-box" href="index.html" aria-label="동양미래대학교">
+          <img src="assets/university_mark.png" alt="동양미래대학교" />
+        </a>
+      </div>
+    </header>
+
+  <main id="main">
+    <section class="sub-hero courses-hero">
+      <div class="container sub-hero-inner">
+        <span>DONGYANG MIRAE UNIVERSITY</span>
+        <h1>교육과정안내</h1>
+        <p>교육과정 정보를 카드, 표, 필터로 나누어 사용자가 원하는 과정을 빠르게 찾도록 구성했습니다.</p>
+      </div>
+    </section>
+
+    <div class="tab-bar" aria-label="교육과정 하위 메뉴">
+      <a class="active" href="#guide">교육과정안내</a>
+      <a href="#schedule">교육일정</a>
+      <a href="apply.html">교육과정신청</a>
+    </div>
+
+    <section class="section" id="guide">
+      <div class="container section-heading center">
+        <span class="eyebrow">Program</span>
+        <h2>부트캠프 교육과정 프로그램</h2>
+        <p>부트캠프 교육과정을 마이크로디그리 과정, 몰입형 교육과정, 기타 교육과정으로 나누어 보여줍니다.</p>
+      </div>
+
+      <div class="container program-diagram" aria-label="교육과정 구성도">
+        <div class="left-boxes">
+          <div>반도체 설비<br />제어 교과</div>
+          <div>반도체 설비<br />유지보수 교과</div>
+          <div>전공 학기<br />교과 편성</div>
+        </div>
+        <div class="diagram-core">
+          <div class="circle light">교과형</div>
+          <div class="circle core">마이크로디그리<br />과정<br /><small>교과형 + 몰입형</small></div>
+          <div class="circle light">몰입형</div>
+        </div>
+        <div class="right-boxes">
+          <div>단기 현장 실무<br />집중 교과</div>
+          <div>자격증<br />연계 특강</div>
+          <div>사업체<br />인사 참여</div>
+        </div>
+      </div>
+
+      <div class="container category-tabs">
+        <button class="active" type="button" data-category="micro">마이크로디그리 과정</button>
+        <button type="button" data-category="immersion">몰입형 교육과정</button>
+        <button type="button" data-category="etc">기타 교육과정</button>
+      </div>
+
+      <div class="container category-panels">
+        <section class="category-panel active" data-panel="micro">
+          <h3>마이크로디그리 과정</h3>
+          <p>반도체 관련 정규 교과목과 단기 집중교육교과목을 혼합한 교육과정입니다.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>수준</th><th>유형</th><th>교과목 구성</th><th>시간</th><th>이수기준</th></tr></thead>
+              <tbody>
+                <tr><td>초급</td><td>교과형</td><td>반도체공정 및 설비기초</td><td>45</td><td>C학점 이상</td></tr>
+                <tr><td>중급</td><td>혼합형</td><td>PLC 실무, 센서·공압 제어</td><td>60</td><td>출석 80% 이상</td></tr>
+                <tr><td>고급</td><td>프로젝트형</td><td>장비 S/W 실무, 설비 제어 프로젝트</td><td>75</td><td>결과물 제출</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <section class="category-panel" data-panel="immersion">
+          <h3>몰입형 교육과정</h3>
+          <p>방학 또는 집중 기간에 실습 위주로 진행되는 단기 교육과정입니다.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>과정명</th><th>대상</th><th>기간</th><th>상태</th></tr></thead>
+              <tbody>
+                <tr><td>PLC 실무 기초 과정</td><td>초급</td><td>2주</td><td><span class="badge danger">마감임박</span></td></tr>
+                <tr><td>반도체 장비 유지보수</td><td>중급</td><td>3주</td><td><span class="badge">신청가능</span></td></tr>
+                <tr><td>SolidWorks 설계 실무</td><td>기초</td><td>1주</td><td><span class="badge">신청가능</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <section class="category-panel" data-panel="etc">
+          <h3>기타 교육과정</h3>
+          <p>취업 특강, 자격증 연계, 포트폴리오 제작 등 학생 지원형 프로그램입니다.</p>
+          <div class="support-grid">
+            <div>취업 포트폴리오 특강</div>
+            <div>자격증 연계 특강</div>
+            <div>참여기업 설명회</div>
+            <div>장비 안전교육</div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="section alt" id="open">
+      <div class="container section-heading">
+        <span class="eyebrow">Search</span>
+        <h2>신청 가능한 교육과정 찾기</h2>
+        <p>교육명 검색과 필터를 통해 모집 중인 과정을 빠르게 확인합니다.</p>
+      </div>
+
+      <div class="container course-tools">
+        <label class="search-box"><span class="sr-only">교육과정 검색</span><input type="search" id="courseSearch" placeholder="예: PLC, 장비, SolidWorks, 취업" autocomplete="off" /></label>
+        <div class="filter-buttons" role="group" aria-label="교육과정 필터">
+          <button type="button" class="active" data-filter="all">전체</button>
+          <button type="button" data-filter="open">신청가능</button>
+          <button type="button" data-filter="urgent">마감임박</button>
+          <button type="button" data-filter="plc">PLC</button>
+          <button type="button" data-filter="equipment">장비</button>
+          <button type="button" data-filter="career">취업</button>
+        </div>
+      </div>
+
+      <div class="container course-grid" id="courseGrid">
+        <article class="course-card" id="plc" data-tags="open urgent plc" data-title="PLC 실무 기초 과정"><img class="course-thumb" src="assets/illust_plc.png" alt="PLC 제어 실습 이미지" /><div class="card-top"><span class="badge danger">마감임박 D-3</span><span class="level">기초</span></div><h3>PLC 실무 기초 과정</h3><p>래더 회로, 타이머, 카운터를 실습하며 설비 제어의 기본 흐름을 익힙니다.</p><ul><li>대상: 처음 PLC를 배우는 학생</li><li>기간: 2주 집중 실습</li><li>연결 직무: 자동화 설비 제어</li></ul><a class="text-link" href="apply.html">신청 절차 보기</a></article>
+        <article class="course-card" data-tags="open equipment" data-title="반도체 장비 유지보수 과정"><img class="course-thumb" src="assets/illust_equipment.png" alt="반도체 장비 유지보수 이미지" /><div class="card-top"><span class="badge">신청가능</span><span class="level">중급</span></div><h3>반도체 장비 유지보수</h3><p>장비 구성, 센서, 공압, 기본 점검 흐름을 배우고 현장 장비 이해도를 높입니다.</p><ul><li>대상: 설비 엔지니어 희망 학생</li><li>기간: 3주 실습</li><li>연결 직무: 장비 유지보수</li></ul><a class="text-link" href="jobs.html">관련 진로 보기</a></article>
+        <article class="course-card" data-tags="open design" data-title="SolidWorks 설계 실무 과정"><img class="course-thumb" src="assets/illust_solidworks.png" alt="3D 설계 실무 이미지" /><div class="card-top"><span class="badge">신청가능</span><span class="level">기초</span></div><h3>SolidWorks 설계 실무</h3><p>부품 모델링, 조립, 도면 작성 중심으로 설계 결과물을 만드는 과정입니다.</p><ul><li>대상: 3D 설계 입문자</li><li>기간: 1주 실습</li><li>연결 직무: 기구 설계 보조</li></ul><a class="text-link" href="facility.html">실습환경 보기</a></article>
+        <article class="course-card" data-tags="closed career" data-title="취업 포트폴리오 특강"><img class="course-thumb" src="assets/illust_portfolio.png" alt="취업 포트폴리오 특강 이미지" /><div class="card-top"><span class="badge muted">모집마감</span><span class="level">공통</span></div><h3>취업 포트폴리오 특강</h3><p>교육 수료 경험과 프로젝트를 자기소개서, 포트폴리오로 연결하는 특강입니다.</p><ul><li>대상: 취업 준비 학생</li><li>기간: 1일 특강</li><li>연결 직무: 설비·공정·제어</li></ul><a class="text-link" href="community.html#review">수강 후기 보기</a></article>
+      </div>
+      <p class="container empty-message" id="emptyMessage" hidden>조건에 맞는 교육과정이 없습니다. 검색어를 바꾸거나 전체 필터를 선택하세요.</p>
+    </section>
+
+    <section class="section" id="schedule">
+      <div class="container section-heading center"><span class="eyebrow">Schedule</span><h2>교육 일정</h2><p>신청 마감일과 진행 기간을 한눈에 볼 수 있도록 표로 정리합니다.</p></div>
+      <div class="container table-wrap">
+        <table>
+          <thead><tr><th>과정명</th><th>신청기간</th><th>교육기간</th><th>상태</th><th>바로가기</th></tr></thead>
+          <tbody>
+            <tr><td>PLC 실무 기초 과정</td><td>06.10 ~ 06.20</td><td>06.24 ~ 07.05</td><td><span class="badge danger">마감임박</span></td><td><a class="text-link" href="apply.html">신청방법</a></td></tr>
+            <tr><td>반도체 장비 유지보수</td><td>06.15 ~ 06.30</td><td>07.08 ~ 07.26</td><td><span class="badge">신청가능</span></td><td><a class="text-link" href="apply.html">신청방법</a></td></tr>
+            <tr><td>SolidWorks 설계 실무</td><td>07.01 ~ 07.10</td><td>07.15 ~ 07.19</td><td><span class="badge">신청가능</span></td><td><a class="text-link" href="apply.html">신청방법</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <div>
+          <img src="assets/site_logo.png" alt="동양미래대학교 반도체부트캠프사업단" />
+          <p>본 페이지는 사이트 개선 기획을 설명하기 위한 웹사이트 시안입니다.</p>
+        </div>
+        <a class="top-link" href="#top">맨 위로</a>
+      </div>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>
